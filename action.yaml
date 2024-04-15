@@ -1,0 +1,23 @@
+name: Fetch a Cloudsmith API token
+description: Build a docker image
+outputs:
+  token:
+    description: The Cloudsmith OIDC token
+    value: ${{ steps.token.outputs.value }}
+inputs:
+  account:
+    description: "Cloudsmith account name"
+    required: true
+  service:
+    description: "Service slug for the token exchange"
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Get OIDC token
+      id: token
+      shell: bash
+      env:
+        CLOUDSMITH_ACCOUNT: ${{ inputs.account }}
+        SERVICE_SLUG: ${{ inputs.service }}
+      run: ./action.sh

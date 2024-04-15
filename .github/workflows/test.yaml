@@ -1,0 +1,42 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: [v*]
+
+permissions:
+  contents: read
+  actions: write
+  id-token: write
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - uses: pre-commit/action@v3.0.1
+
+      - name: Fetch Cloudsmith OIDC token
+        id: cloudsmith-oidc
+        uses: ./
+        with:
+          account: ${{ secrets.CLOUDSMITH_ACCOUNT }}
+          service: ${{ secrets.CLOUDSMITH_SERVICE }}
+
+      - name: Verify Cloudsmith OIDC token
+        env:
+          TOKEN: ${{ steps.cloudsmith-oidc.outputs.token }}
+        run: |
+          typ=$(echo "$TOKEN" | cut -d'.' -f1 | base64 -d | jq -r .typ)
+          if [[ "$typ" != "JWT" ]]; then
+            echo "Invalid token type: $typ"
+            exit 1
+          fi
