@@ -23,9 +23,21 @@ runs:
       run: |
         set -eu
 
+        # https://superuser.com/a/1641410
+        curlf() {
+          output_file=$(mktemp)
+          code=$(curl --silent --output $OUTPUT_FILE --write-out "%{http_code}" "$@")
+          if [[ ${code} -lt 200 || ${code} -gt 299 ]]; then
+            >&2 cat $output_file
+            return 22
+          fi
+          cat $output_file
+          rm $output_file
+        }
+
         request() {
           set +e
-          resp="$(curl -s --fail-with-body "$@")"
+          resp="$(curlf "$@")"
           rc=$?
           set -e
           # shellcheck disable=SC2181
