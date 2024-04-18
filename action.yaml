@@ -26,7 +26,7 @@ runs:
         # https://superuser.com/a/1641410
         curlf() {
           output_file=$(mktemp)
-          code=$(curl --silent --output $OUTPUT_FILE --write-out "%{http_code}" "$@")
+          code=$(curl --silent --output $output_file --write-out "%{http_code}" "$@")
           if [[ ${code} -lt 200 || ${code} -gt 299 ]]; then
             >&2 cat $output_file
             return 22
