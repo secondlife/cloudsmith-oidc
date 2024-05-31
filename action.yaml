@@ -4,6 +4,9 @@ outputs:
   token:
     description: The Cloudsmith OIDC token
     value: ${{ steps.token.outputs.value }}
+  file:
+    description: A sourceable file containing the Cloudsmith OIDC token
+    value: ${{ steps.token.outputs.file }}
 inputs:
   account:
     description: "Cloudsmith account name"
@@ -54,3 +57,7 @@ runs:
         echo "Retrieving Cloudsmith token for account: $CLOUDSMITH_ACCOUNT (service account: $SERVICE_SLUG)"
         cloudsmith_token=$(request -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$id_token\", \"service_slug\":\"$SERVICE_SLUG\"}" "https://api.cloudsmith.io/openid/$CLOUDSMITH_ACCOUNT/" | jq -r '.token')
         echo "value=$cloudsmith_token" >> "$GITHUB_OUTPUT"
+
+        file="$(mktemp)"
+        echo "CLOUDSMITH_TOKEN=$cloudsmith_token" >> "$file"
+        echo "file=$file" >> "$GITHUB_OUTPUT"
