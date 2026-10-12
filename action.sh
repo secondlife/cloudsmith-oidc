@@ -2,27 +2,12 @@
 
 set -euxo pipefail
 
-# https://superuser.com/a/1641410
-curlf() {
-    output_file=$(mktemp)
-    code="$(curl --silent --output "$output_file" --write-out "%{http_code}" "$@")"
-    if [[ "$code" -lt 200 || "$code" -gt 299 ]]; then
-        >&2 cat "$output_file"
-        return 22
-    fi
-    cat "$output_file"
-    rm "$output_file"
-}
-
 request() {
-    set +e
-    resp="$(curlf "$@")"
-    rc=$?
-    set -e
-    # shellcheck disable=SC2181
-    if [ $rc -ne 0 ]; then
-        echo "$resp" >> /dev/stderr
-        exit 1
+    if ! resp="$(curl --silent --fail-with-body "$@")"
+    then
+        curl_exit_code="$?"
+        echo "$resp" >&2
+        exit "$curl_exit_code"
     fi
     echo "$resp"
 }
