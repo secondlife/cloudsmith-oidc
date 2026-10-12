@@ -1,17 +1,17 @@
 #!/bin/bash
 
-set -eu
+set -euxo pipefail
 
 # https://superuser.com/a/1641410
 curlf() {
     output_file=$(mktemp)
-    code=$(curl --silent --output $output_file --write-out "%{http_code}" "$@")
-    if [[ ${code} -lt 200 || ${code} -gt 299 ]]; then
-        >&2 cat $output_file
+    code="$(curl --silent --output "$output_file" --write-out "%{http_code}" "$@")"
+    if [[ "$code" -lt 200 || "$code" -gt 299 ]]; then
+        >&2 cat "$output_file"
         return 22
     fi
-    cat $output_file
-    rm $output_file
+    cat "$output_file"
+    rm "$output_file"
 }
 
 request() {
@@ -29,9 +29,9 @@ request() {
 
 if [[ ! -v ACTIONS_ID_TOKEN_REQUEST_TOKEN ]]
 then
-    message='No $ACTIONS_ID_TOKEN_REQUEST_TOKEN is set. Does this job have the `id-token: write` permission necessary to get a Cloudsmith token?'
+    message="No \$ACTIONS_ID_TOKEN_REQUEST_TOKEN is set. Does this job have the \`id-token: write\` permission necessary to get a Cloudsmith token?"
     echo "$message" >&2
-    echo '::error title=Missing `id-token: write` permission?::'"$message"
+    echo "::error title=Missing \`id-token: write\` permission?::${message}"
     exit 1
 fi
 
