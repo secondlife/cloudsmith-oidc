@@ -26,4 +26,8 @@ jobs:
           # ...
 ```
 
+Either [jq] or Python is required. To use in a [containerized job] or on a custom runner image, ensure Python is available or install jq.
+
+[containerized job]: https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container
+[jq]: https://jqlang.org
 [oidc]: https://help.cloudsmith.io/docs/openid-connect

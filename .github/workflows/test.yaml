@@ -12,17 +12,33 @@ permissions:
   id-token: write
 
 jobs:
-  test:
-    name: Test
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-python@v7
         with:
           python-version: 3.12
-
       - uses: pre-commit/action@v3.0.1
+
+  test:
+    name: Test
+    container:
+      # One or more test cases run in a container, so we can tell that the
+      # Action works when run in a containerized job.
+      image: ${{ matrix.container-image }}
+    runs-on: ubuntu-latest
+    strategy:
+      # Finish all test cases even once one of them fails.
+      fail-fast: false
+      matrix:
+        case: [runner, container]
+        include:
+          - case: container
+            container-image: python:3.12
+    steps:
+      - uses: actions/checkout@v7
 
       - name: Fetch Cloudsmith OIDC token
         id: cloudsmith-oidc
@@ -31,12 +47,24 @@ jobs:
           account: ${{ secrets.CLOUDSMITH_ACCOUNT }}
           service: ${{ secrets.CLOUDSMITH_SERVICE }}
 
+      - uses: actions/setup-python@v7
+        if: '! matrix.container-image'
+        with:
+          python-version: 3.12
       - name: Verify Cloudsmith OIDC token
         env:
           TOKEN: ${{ steps.cloudsmith-oidc.outputs.token }}
           FILE: ${{ steps.cloudsmith-oidc.outputs.file }}
         run: |
-          typ=$(echo "$TOKEN" | cut -d'.' -f1 | base64 -d | jq -r .typ)
+          set -euxo pipefail
+
+          # jq isn't available in the container case, so check the token with
+          # Python in both cases.
+          pluck_field() {
+            python3 -c 'import json, sys; print(json.load(sys.stdin)[sys.argv[1]])' "$1"
+          }
+
+          typ=$(echo "$TOKEN" | cut -d'.' -f1 | base64 -d | pluck_field typ)
           if [[ "$typ" != "JWT" ]]; then
             echo "Invalid token type: $typ"
             exit 1
@@ -46,3 +74,4 @@ jobs:
             echo "Token not found in file $FILE"
             exit 1
           fi
+        shell: bash
